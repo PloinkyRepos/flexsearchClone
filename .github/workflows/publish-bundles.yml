@@ -33,7 +33,7 @@ jobs:
           java-version: '21'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build CommonJS bundle
         run: npm run build:bundle
