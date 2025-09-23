@@ -15,10 +15,11 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          path: source
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,31 +35,40 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: source
 
       - name: Build CommonJS bundle
         run: npm run build:bundle
+        working-directory: source
 
       - name: Build ES Module bundle
         run: npm run build:module:bundle
+        working-directory: source
 
-      - name: Stage bundle artifacts
+      - name: Checkout release repository
+        uses: actions/checkout@v4
+        with:
+          repository: AssistOS-AI/flexsearch-releases
+          token: ${{ secrets.FLEXSEARCH_RELEASES_TOKEN }}
+          fetch-depth: 0
+          path: release
+          ref: main
+
+      - name: Sync bundles into release repo
+        run: |
+          mkdir -p dist
+          rsync -a --delete ../source/dist/ dist/
+        working-directory: release
+
+      - name: Commit and push bundles
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          find dist -type f \( -name '*.mjs' -o -name '*.cjs' -o -name 'flexsearch.bundle*.js' -o -name 'node.js' \) -print0 | xargs -0 --no-run-if-empty git add
-
-      - name: Commit and push
-        run: |
+          git add dist
           if git diff --cached --quiet; then
             echo "No bundle updates to commit"
             exit 0
           fi
-
-          BRANCH="${GITHUB_REF#refs/heads/}"
-          if [ -z "$BRANCH" ]; then
-            echo "Unsupported ref: $GITHUB_REF"
-            exit 0
-          fi
-
           git commit -m "chore: update dist bundles [skip ci]"
-          git push origin "HEAD:$BRANCH"
+          git push origin HEAD:main
+        working-directory: release
