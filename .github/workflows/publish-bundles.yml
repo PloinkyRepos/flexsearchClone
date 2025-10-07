@@ -49,8 +49,8 @@ jobs:
       - name: Checkout release repository
         uses: actions/checkout@v4
         with:
-          repository: AssistOS-AI/flexsearch-releases
-          token: ${{ secrets.FLEXSEARCH_RELEASES_TOKEN }}
+          repository: ploinkyrepos/flexsearch
+          token: ${{ secrets.PLOINKYREPOS_FLEXSEARCH_TOKEN }}
           fetch-depth: 0
           path: release
           ref: main
